@@ -63,6 +63,30 @@ Leave it running while you play. That is the whole setup on this machine.
 - **Mic on this PC:** Screen Capture sends a single audio source. Either route mic + system audio through
   a virtual device (VB-CABLE, VoiceMeeter) and select that as the audio source, or plug the mic into the
   stream PC instead.
+
+> **Voicemeeter / ASIO users: the audio can randomly drop to "Silence".** When an ASIO driver is
+> installed on the gaming PC (Voicemeeter, Focusrite and other audio interfaces, ASIO4ALL), Screen
+> Capture's audio device rescan sometimes loses the selected device and falls back to **Silence**. The
+> stream keeps going with no game or mic audio until you pick the device again. Windows never removes
+> or renames the device; the bug is in Screen Capture's rescan, so changing devices doesn't help.
+> Pick one workaround:
+>
+> - **Hide the ASIO drivers on the gaming PC.** In an elevated PowerShell:
+>
+>   ```powershell
+>   Rename-Item HKLM:\SOFTWARE\ASIO ASIO-hidden
+>   Rename-Item HKLM:\SOFTWARE\WOW6432Node\ASIO ASIO-hidden
+>   ```
+>
+>   While they're hidden, no program can use ASIO, so set Voicemeeter's hardware devices to WDM or
+>   KS. Updating Voicemeeter or an audio interface driver can register ASIO again; if so, run the
+>   commands again. To undo, rename both keys back to `ASIO`.
+> - **Send the audio over VBAN instead of NDI.** Send the Voicemeeter bus to the stream PC with VBAN,
+>   receive it in OBS with the obs-vban plugin, set Screen Capture's Audio Source to **Silence**, and
+>   line it up with the video using the source's *Sync Offset*.
+> - **Do the mixing on the stream PC.** Plug the mic into the stream PC (or run Voicemeeter there)
+>   and leave Screen Capture on System Audio, with no ASIO driver installed on the gaming PC.
+
 - Exclusive fullscreen can come through black in a desktop capture — switch that application to
   borderless / windowed mode if it does.
 - If the network can't keep up with full-quality NDI, install the HX build (`-IncludeHX`) and use that
