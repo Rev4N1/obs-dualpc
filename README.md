@@ -71,16 +71,42 @@ Leave it running while you play. That is the whole setup on this machine.
 > or renames the device; the bug is in Screen Capture's rescan, so changing devices doesn't help.
 > Pick one workaround:
 >
-> - **Hide the ASIO drivers on the gaming PC.** In an elevated PowerShell:
+> - **Hide the ASIO drivers on the gaming PC.** Paste this into an elevated (64-bit) PowerShell:
 >
 >   ```powershell
->   Rename-Item HKLM:\SOFTWARE\ASIO ASIO-hidden
->   Rename-Item HKLM:\SOFTWARE\WOW6432Node\ASIO ASIO-hidden
+>   foreach ($k in 'SOFTWARE\ASIO', 'SOFTWARE\WOW6432Node\ASIO') {
+>       $p = "HKLM:\$k"
+>       if (-not (Test-Path $p)) { "already hidden: $k"; continue }
+>       if (Test-Path "$p-hidden") {
+>           Copy-Item "$p\*" "$p-hidden" -Recurse -Force -ErrorAction SilentlyContinue
+>           Remove-Item $p -Recurse -Force
+>       }
+>       else { Rename-Item $p 'ASIO-hidden' }
+>       "hidden: $k"
+>   }
 >   ```
 >
->   While they're hidden, no program can use ASIO, so set Voicemeeter's hardware devices to WDM or
->   KS. Updating Voicemeeter or an audio interface driver can register ASIO again; if so, run the
->   commands again. To undo, rename both keys back to `ASIO`.
+>   To undo it, paste this one instead:
+>
+>   ```powershell
+>   foreach ($k in 'SOFTWARE\ASIO', 'SOFTWARE\WOW6432Node\ASIO') {
+>       $p = "HKLM:\$k"
+>       if (-not (Test-Path "$p-hidden")) { "nothing to restore: $k"; continue }
+>       if (Test-Path $p) {
+>           Copy-Item "$p-hidden\*" "$p" -Recurse -Force -ErrorAction SilentlyContinue
+>           Remove-Item "$p-hidden" -Recurse -Force
+>       }
+>       else { Rename-Item "$p-hidden" 'ASIO' }
+>       "restored: $k"
+>   }
+>   ```
+>
+>   Both only rename `HKLM\SOFTWARE\ASIO` and `HKLM\SOFTWARE\WOW6432Node\ASIO` to `ASIO-hidden` and
+>   back. No driver is uninstalled, no audio device is removed, nothing else is touched. They're safe
+>   to re-run: if an app re-creates the ASIO key while it is hidden, the hide snippet folds those
+>   entries into `ASIO-hidden` instead of making a second key, and the restore snippet folds them
+>   back into a single `ASIO` key. While ASIO is hidden no program can use it, so set Voicemeeter's
+>   hardware devices to WDM or KS.
 > - **Send the audio over VBAN instead of NDI.** Send the Voicemeeter bus to the stream PC with VBAN,
 >   receive it in OBS with the obs-vban plugin, set Screen Capture's Audio Source to **Silence**, and
 >   line it up with the video using the source's *Sync Offset*.
