@@ -189,6 +189,30 @@ Output Mode: **Advanced**
 - Add **NDI Source** → Source name: the gaming PC, shown as `<COMPUTER-NAME> (Screen 1)`.
 - Desktop not 1920x1080? Right-click the NDI source → **Transform → Fit to screen** (or **Stretch to
   screen** for a stretched 4:3 picture).
-- Audio from the gaming PC already arrives in sync inside the NDI source — do **not** add it again.
+- Audio from the gaming PC arrives inside the NDI source — do **not** add it again. If it is out of
+  sync with the picture, see [Audio behind the video](#audio-behind-the-video).
 - A mic on the stream PC may need a *Sync Offset*: Edit → **Advanced Audio Properties**.
 - Overlays, alerts, chat and browser sources all live on this PC.
+
+### Audio behind the video
+
+You may see something happen in the game and only hear it a moment later. The NDI audio reaches OBS
+later than the picture, so tell OBS to play it earlier with a **negative** Sync Offset:
+
+1. Edit → **Advanced Audio Properties**.
+2. Find the row of the NDI source from the gaming PC.
+3. **Sync Offset** → type **-100** (minus 100) and press Enter.
+4. Watch and listen:
+   - Sound still late → go further: **-150**, **-200**, and so on.
+   - Sound now comes *before* the picture → you went too far, go back toward 0 (**-80**, **-60**…).
+5. Stop when the sound matches the picture.
+
+The minus sign is what makes the sound play earlier; a positive number makes it even later. OBS
+accepts down to -950 ms. Need more than about -500 ms? Leave the offset at 0 and delay the picture
+instead: right-click the NDI source → **Filters** → add **Render Delay** with that many milliseconds.
+
+> **Sync that slowly gets worse over a long stream** is a known DistroAV issue
+> ([DistroAV#742](https://github.com/DistroAV/DistroAV/issues/742)): the gaming PC's and stream PC's
+> clocks run at slightly different speeds, so the gap grows over hours. Hiding and showing the NDI
+> source (eye icon) resets it. A fix is in progress in
+> [DistroAV#1479](https://github.com/DistroAV/DistroAV/pull/1479) but not released yet.
